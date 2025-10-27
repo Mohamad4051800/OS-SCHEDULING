@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SchedulerOS - زمان‌بندی در سیستم‌عامل</title>
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/animejs/lib/anime.iife.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap');
+        * { font-family: 'Vazirmatn', sans-serif; }
+        .gradient-text { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .algorithm-card { background: linear-gradient(135deg, rgba(102, 126, 234, 0.06) 0%, rgba(118, 75, 162, 0.06) 100%); border: 1px solid rgba(102, 126, 234, 0.12); transition: all 0.3s ease; }
+        .algorithm-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(102,126,234,0.08); }
+        .slide-in { opacity: 0; transform: translateY(30px); transition: all 0.6s ease; }
+        .slide-in.visible { opacity: 1; transform: translateY(0); }
+        .gantt { margin-top:12px; padding:12px; background:#f2f6fb; border-radius:8px }
+        .gantt-row{display:flex; align-items:center; margin:6px 0}
+        .gantt-label{width:140px; text-align:right; margin-left:8px}
+        .gantt-bar{height:32px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; color:#fff; font-weight:600}
+        .process-table td, .process-table th { padding:8px; border-bottom:1px solid #eee; text-align:right }
+        .floating-animation { animation: float 6s ease-in-out infinite; }
+        @keyframes float { 0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)} }
+        .demo-button { background: white; color: #f5576c; border: none; padding: 10px 22px; border-radius: 20px; font-weight: 600; cursor: pointer; }
+        .demo-input { padding:8px 12px; border-radius:8px; border:1px solid #e2e8f0 }
+        .dark-mode { background: #1a202c; color: #e2e8f0 }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <i data-feather="clock" class="w-8 h-8 text-indigo-600"></i>
+                    <h1 class="text-2xl font-bold gradient-text">SchedulerOS</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="darkModeToggle" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition">
+                        <i data-feather="moon" class="w-5 h-5"></i>
+                    </button>
+                    <button id="menuToggle" class="md:hidden p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition">
+                        <i data-feather="menu" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="mobileMenu" class="hidden md:hidden mt-4">
+                <div class="flex flex-col space-y-2">
+                    <a href="#introduction" class="px-4 py-2 rounded-lg hover:bg-gray-100 transition">مقدمه</a>
+                    <a href="#types" class="px-4 py-2 rounded-lg hover:bg-gray-100 transition">انواع زمان‌بندی</a>
+                    <a href="#algorithms" class="px-4 py-2 rounded-lg hover:bg-gray-100 transition">الگوریتم‌ها</a>
+                    <a href="#comparison" class="px-4 py-2 rounded-lg hover:bg-gray-100 transition">مقایسه</a>
+                    <a href="#interactive-demo" class="px-4 py-2 rounded-lg hover:bg-gray-100 transition">دمو تعاملی</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <section class="relative py-20 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 text-white overflow-hidden">
+        <div class="container mx-auto px-4 text-center relative z-10">
+            <h1 class="text-5xl md:text-6xl font-bold mb-6 floating-animation">زمان‌بندی (CPU Scheduling) در سیستم‌عامل</h1>
+            <p class="text-xl md:text-2xl mb-8 max-w-3xl mx-auto">چگونگی تصمیم‌گیری سیستم‌عامل برای انتخاب فرآیندی که در هر لحظه باید روی CPU اجرا شود — هدف، الگوریتم‌ها و شبیه‌سازی تعاملی</p>
+            <div class="flex justify-center space-x-4">
+                <button onclick="scrollToSection('algorithms')" class="bg-white text-indigo-600 px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition">شروع</button>
+                <button onclick="scrollToSection('interactive-demo')" class="border-2 border-white text-white px-8 py-3 rounded-full font-semibold hover:bg-white hover:text-indigo-600 transition">دموی تعاملی</button>
+            </div>
+        </div>
+        <div class="absolute inset-0 bg-black opacity-20"></div>
+    </section>
+
+    <section id="introduction" class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-4xl font-bold text-center mb-6 gradient-text slide-in">تعریف و هدف زمان‌بندی</h2>
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-8 mb-6 slide-in">
+                    <p class="text-lg leading-relaxed text-gray-700">زمان‌بندی مجموعه‌ای از سیاست‌ها و الگوریتم‌هاست که سیستم‌عامل با آن تصمیم می‌گیرد کدام فرآیند یا نخ در هر لحظه روی CPU اجرا شود. هدف‌ها معمولاً شامل بهینه‌سازی استفاده از CPU، کاهش زمان انتظار، افزایش پاسخ‌دهی و حفظ عدالت بین فرآیندها هستند.</p>
+                </div>
+                <div class="bg-white rounded-xl p-6 shadow-lg slide-in">
+                    <p class="text-xl font-semibold text-indigo-600 text-center">«سیستم‌عامل باید تعیین کند چه فرایندی، چه مدت، و در چه ترتیبی اجرا شود.»</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="types" class="py-16 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <div class="max-w-6xl mx-auto">
+                <h2 class="text-4xl font-bold text-center mb-12 gradient-text slide-in">انواع زمان‌بندی</h2>
+                <div class="process-flow slide-in">
+                    <div class="flow-step">
+                        <i data-feather="database" class="w-8 h-8 mb-2 mx-auto"></i>
+                        <div class="font-semibold">زمان‌بندی بلندمدت</div>
+                        <div class="text-sm opacity-90">کنترل ورود فرآیندها به سیستم (بارگذاری به حافظه)</div>
+                    </div>
+                    <div class="flow-step">
+                        <i data-feather="refresh-cw" class="w-8 h-8 mb-2 mx-auto"></i>
+                        <div class="font-semibold">زمان‌بندی میان‌مدت</div>
+                        <div class="text-sm opacity-90">جابجایی فرآیند بین حافظه و دیسک (Swapping)</div>
+                    </div>
+                    <div class="flow-step">
+                        <i data-feather="cpu" class="w-8 h-8 mb-2 mx-auto"></i>
+                        <div class="font-semibold">زمان‌بندی کوتاه‌مدت</div>
+                        <div class="text-sm opacity-90">انتخاب فرآیند بعدی برای اجرا روی CPU (Quick decision)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="algorithms" class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="max-w-6xl mx-auto">
+                <h2 class="text-4xl font-bold text-center mb-8 gradient-text slide-in">الگوریتم‌های معروف زمان‌بندی</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    <div class="algorithm-card rounded-2xl p-6 slide-in">
+                        <h3 class="text-xl font-bold text-indigo-700 mb-2">FCFS - First Come First Serve</h3>
+                        <p class="text-gray-700 text-sm">اولین فرآیندی که وارد صف آماده می‌شود، اولین اجرا می‌شود. ساده اما ممکن است فرآیندهای کوتاه را معطل کند.</p>
+                    </div>
+                    <div class="algorithm-card rounded-2xl p-6 slide-in">
+                        <h3 class="text-xl font-bold text-indigo-700 mb-2">SJF - Shortest Job First</h3>
+                        <p class="text-gray-700 text-sm">اول فرآیند با کوتاه‌ترین زمان پردازشی اجرا می‌شود؛ میانگین زمان انتظار را کمینه می‌کند، ولی نیاز به برآورد زمان اجرا دارد.</p>
+                    </div>
+                    <div class="algorithm-card rounded-2xl p-6 slide-in">
+                        <h3 class="text-xl font-bold text-indigo-700 mb-2">Priority Scheduling</h3>
+                        <p class="text-gray-700 text-sm">براساس اولویت اجرا می‌شود — ممکن است باعث گرسنگی (Starvation) برای اولویت پایین شود.</p>
+                    </div>
+                    <div class="algorithm-card rounded-2xl p-6 slide-in">
+                        <h3 class="text-xl font-bold text-indigo-700 mb-2">Round Robin (RR)</h3>
+                        <p class="text-gray-700 text-sm">هر فرآیند به نوبت و به مدت زمان ثابتی (Quantum) اجرا می‌شود — مناسب برای سیستم‌های تعاملی.</p>
+                    </div>
+                    <div class="algorithm-card rounded-2xl p-6 slide-in">
+                        <h3 class="text-xl font-bold text-indigo-700 mb-2">Multilevel Queue</h3>
+                        <p class="text-gray-700 text-sm">چند صف با سیاست‌های مختلف؛ برای دسته‌بندی فرآیندهای تعاملی و دسته‌ای مفید است.</p>
+                    </div>
+                    <div class="algorithm-card rounded-2xl p-6 slide-in">
+                        <h3 class="text-xl font-bold text-indigo-700 mb-2">Multilevel Feedback Queue</h3>
+                        <p class="text-gray-700 text-sm">امکان حرکت فرآیندها بین صف‌ها را بر اساس رفتارشان فراهم می‌کند؛ تطبیق‌پذیر و قدرتمند.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="comparison" class="py-16 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <div class="max-w-6xl mx-auto">
+                <h2 class="text-4xl font-bold text-center mb-8 gradient-text slide-in">معیارهای ارزیابی</h2>
+                <div class="comparison-table slide-in bg-white rounded-2xl p-6 shadow-lg">
+                    <table class="w-full">
+                        <thead>
+                            <tr>
+                                <th class="text-right p-3">معیار</th>
+                                <th class="text-right p-3">توضیح</th>
+                            </tr>
+                        </thead>
+        <tbody>
+            <tr><td class="font-semibold">CPU Utilization</td><td>درصد زمانی که CPU مشغول است</td></tr>
+            <tr><td class="font-semibold">Throughput</td><td>تعداد فرآیندهای تکمیل‌شده در واحد زمان</td></tr>
+            <tr><td class="font-semibold">Turnaround Time</td><td>زمان از ورود تا پایان یک فرآیند</td></tr>
+            <tr><td class="font-semibold">Waiting Time</td><td>زمان صرف‌شده در صف آماده</td></tr>
+            <tr><td class="font-semibold">Response Time</td><td>زمان رسیدن اولین پاسخ (مهم برای سیستم‌های تعاملی)</td></tr>
+        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="algorithms-examples" class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-3xl font-bold text-center mb-6 gradient-text slide-in">مثال کوتاه (توضیح گانت)</h2>
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 slide-in">
+                    <p class="text-gray-700">در این بخش یک گانت‌چارت ساده برای نشان دادن نحوه اجرای چند فرآیند توسط الگوریتم‌های مختلف نمایش داده می‌شود — برای درک بهتر از دمو تعاملی استفاده کن.</p>
+                </div>
+                <div class="gantt mt-6 slide-in" id="ganttContainer">
+                    <!-- Gantt bars will be rendered here by JS -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="interactive-demo" class="py-16 bg-gradient-to-br from-purple-600 via-pink-600 to-red-600 text-white">
+        <div class="container mx-auto px-4">
+            <div class="max-w-4xl mx-auto text-center">
+                <h2 class="text-4xl font-bold mb-6 slide-in">دموی تعاملی زمان‌بندی CPU</h2>
+                <p class="mb-6">فرآیند اضافه کن، الگوریتم انتخاب کن، و اجرای CPU را مرحله‌به‌مرحله ببین. آمار زمان انتظار و پاسخ را هم محاسبه می‌کنیم.</p>
+
+                <div class="interactive-demo slide-in">
+                    <div class="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <input id="procName" class="demo-input" placeholder="نام فرآیند (مثلاً P1)" />
+                        <input id="burstTime" type="number" class="demo-input" placeholder="Burst time (CPU)" />
+                        <input id="priority" type="number" class="demo-input" placeholder="Priority (اختیاری)" />
+                    </div>
+
+                    <div class="mb-4 flex flex-wrap justify-center gap-4">
+                        <select id="algorithm" class="demo-input">
+                            <option value="FCFS">FCFS</option>
+                            <option value="SJF">SJF</option>
+                            <option value="Priority">Priority</option>
+                            <option value="RR">Round Robin</option>
+                            <option value="MLQ">Multilevel Queue (مثال)</option>
+                        </select>
+                        <input id="quantum" type="number" class="demo-input" placeholder="Quantum (برای RR)" />
+                        <button class="demo-button" onclick="addProcess()">افزودن فرآیند</button>
+                        <button class="demo-button" onclick="startSimulation()">شروع شبیه‌سازی</button>
+                        <button class="demo-button" onclick="stepSimulation()">اجرای نوبت بعدی</button>
+                        <button class="demo-button" onclick="resetSimulation()">بازنشانی</button>
+                    </div>
+
+                    <div class="mt-6 text-left bg-white bg-opacity-10 rounded-lg p-4 text-right">
+                        <h3 class="font-semibold mb-2">صف آماده</h3>
+                        <table class="process-table w-full bg-white bg-opacity-5 rounded">
+                            <thead>
+                                <tr><th>نام</th><th>Burst</th><th>Priority</th><th>وضعیت</th></tr>
+                            </thead>
+                            <tbody id="readyQueue"></tbody>
+                        </table>
+
+                        <div class="mt-6">
+                            <h3 class="font-semibold mb-2">گانت‌چارت</h3>
+                            <div id="ganttDemo" class="gantt"></div>
+                        </div>
+
+                        <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-white bg-opacity-10 rounded p-3">
+                                <div class="text-2xl font-bold" id="statTurnaround">0</div>
+                                <div class="text-sm">میانگین Turnaround</div>
+                            </div>
+                            <div class="bg-white bg-opacity-10 rounded p-3">
+                                <div class="text-2xl font-bold" id="statWaiting">0</div>
+                                <div class="text-sm">میانگین Waiting</div>
+                            </div>
+                            <div class="bg-white bg-opacity-10 rounded p-3">
+                                <div class="text-2xl font-bold" id="statResponse">0</div>
+                                <div class="text-sm">میانگین Response</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="max-w-4xl mx-auto text-center">
+                <div class="flex items-center justify-center mb-6">
+                    <i data-feather="cpu" class="w-8 h-8 text-indigo-400 ml-3"></i>
+                    <h3 class="text-2xl font-bold gradient-text">SchedulerOS</h3>
+                </div>
+                <p class="text-gray-400 mb-6">سازنده: محمدحسن مالکی</p>
+                <div class="mt-8 pt-8 border-t border-gray-800">
+                    <p class="text-gray-500 text-sm">ساخته شده با ❤️ برای دانشجویان سیستم‌عامل</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        feather.replace();
+        // Dark Mode Toggle
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const body = document.body;
+        darkModeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            const icon = darkModeToggle.querySelector('i');
+            if (body.classList.contains('dark-mode')) icon.setAttribute('data-feather', 'sun'); else icon.setAttribute('data-feather','moon');
+            feather.replace();
+        });
+
+        // Mobile Menu Toggle
+        const menuToggle = document.getElementById('menuToggle');
+        const mobileMenu = document.getElementById('mobileMenu');
+        menuToggle.addEventListener('click', () => { mobileMenu.classList.toggle('hidden'); });
+
+        // Scroll reveal
+        const observer = new IntersectionObserver((entries) => { entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); }); }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+        document.querySelectorAll('.slide-in').forEach(el => observer.observe(el));
+
+        // --- Interactive simulation logic ---
+        let processes = [];
+        let timeline = [];
+        let currentTime = 0;
+        let simRunning = false;
+        let algorithm = 'FCFS';
+        let quantum = 2;
+
+        function refreshReadyQueue() {
+            const tbody = document.getElementById('readyQueue');
+            tbody.innerHTML = '';
+            processes.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${p.name}</td><td>${p.burst}</td><td>${p.priority ?? '-'}</td><td>${p.status}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderGantt() {
+            const container = document.getElementById('ganttDemo');
+            container.innerHTML = '';
+            if (timeline.length === 0) { container.innerHTML = '<div class="text-sm text-gray-600 p-3">گانت خالی است</div>'; return; }
+            timeline.forEach(segment => {
+                const width = (segment.duration * 20) + 'px';
+                const bar = document.createElement('div');
+                bar.className = 'gantt-row';
+                const label = document.createElement('div'); label.className = 'gantt-label'; label.textContent = segment.name;
+                const color = '#' + Math.floor(Math.random()*16777215).toString(16);
+                const barInner = document.createElement('div'); barInner.className = 'gantt-bar'; barInner.style.width = width; barInner.style.background = color; barInner.textContent = `${segment.start} - ${segment.start + segment.duration}`;
+                bar.appendChild(label); bar.appendChild(barInner);
+                container.appendChild(bar);
+            });
+        }
+
+        function addProcess() {
+            const nameInput = document.getElementById('procName');
+            const burstInput = document.getElementById('burstTime');
+            const prioInput = document.getElementById('priority');
+            const name = nameInput.value.trim() || `P${processes.length+1}`;
+            const burst = parseInt(burstInput.value) || 1;
+            const priority = prioInput.value ? parseInt(prioInput.value) : null;
+            processes.push({ name, burst, remaining: burst, priority, arrival: currentTime, status: 'Ready', startTime: null, finishTime: null, responseTime: null });
+            nameInput.value=''; burstInput.value=''; prioInput.value='';
+            refreshReadyQueue();
+        }
+
+        function startSimulation() {
+            algorithm = document.getElementById('algorithm').value;
+            quantum = parseInt(document.getElementById('quantum').value) || 2;
+            // reset
+            timeline = []; currentTime = 0; simRunning = true;
+            // copy processes and sort by arrival if needed
+            const queue = processes.map(p => ({...p}));
+            if (algorithm === 'FCFS') runFCFS(queue);
+            else if (algorithm === 'SJF') runSJF(queue);
+            else if (algorithm === 'Priority') runPriority(queue);
+            else if (algorithm === 'RR') runRR(queue, quantum);
+            else if (algorithm === 'MLQ') runMLQ(queue);
+            renderGantt(); computeStats(queue);
+            processes = queue; refreshReadyQueue();
+        }
+
+        function stepSimulation() {
+            // For simplicity implement step as a single small-time-slice RR execution for demo
+            if (!simRunning) { alert('شبیه‌سازی را شروع کنید'); return; }
+            alert('در این نسخه گام‌به‌گام محدود است — از کل شبیه‌سازی استفاده کنید. اگر می‌خواهی گام‌به‌گام کامل اضافه کنم بگو.');
+        }
+
+        function resetSimulation() {
+            processes = []; timeline = []; currentTime = 0; simRunning = false;
+            document.getElementById('ganttDemo').innerHTML = '';
+            refreshReadyQueue(); updateStats(0,0,0);
+        }
+
+        // --- Core scheduling algorithm implementations (simple educational versions) ---
+        function runFCFS(queue) {
+            queue.sort((a,b)=>a.arrival - b.arrival);
+            let time = 0;
+            queue.forEach(p => {
+                p.startTime = time; if (p.responseTime === null) p.responseTime = time - p.arrival;
+                timeline.push({ name: p.name, start: time, duration: p.burst });
+                time += p.burst; p.finishTime = time; p.waitingTime = p.startTime - p.arrival; p.turnaround = p.finishTime - p.arrival; p.remaining = 0; p.status='Finished';
+            });
+            currentTime = time;
+        }
+
+        function runSJF(queue) {
+            // non-preemptive SJF
+            queue.sort((a,b)=>a.arrival - b.arrival);
+            let time = 0;
+            const ready = [];
+            while (queue.some(p=>p.remaining>0)) {
+                queue.filter(p=>p.arrival<=time && p.remaining>0).forEach(p=>{ if(!ready.includes(p)) ready.push(p); });
+                if (ready.length===0) { time++; continue; }
+                ready.sort((a,b)=>a.remaining - b.remaining);
+                const p = ready.shift();
+                p.startTime = time; if (p.responseTime===null) p.responseTime = time - p.arrival;
+                timeline.push({ name:p.name, start:time, duration:p.remaining });
+                time += p.remaining; p.finishTime = time; p.waitingTime = p.startTime - p.arrival; p.turnaround = p.finishTime - p.arrival; p.remaining = 0; p.status='Finished';
+            }
+            currentTime = time;
+        }
+
+        function runPriority(queue) {
+            // non-preemptive priority (lower value = higher priority)
+            queue.sort((a,b)=>a.arrival - b.arrival);
+            let time = 0; const ready = [];
+            while (queue.some(p=>p.remaining>0)) {
+                queue.filter(p=>p.arrival<=time && p.remaining>0).forEach(p=>{ if(!ready.includes(p)) ready.push(p); });
+                if (ready.length===0) { time++; continue; }
+                ready.sort((a,b)=> (a.priority ?? 999) - (b.priority ?? 999));
+                const p = ready.shift(); p.startTime=time; if(p.responseTime===null) p.responseTime=time-p.arrival;
+                timeline.push({name:p.name, start:time, duration:p.remaining}); time+=p.remaining; p.finishTime=time; p.waitingTime=p.startTime-p.arrival; p.turnaround=p.finishTime-p.arrival; p.remaining=0; p.status='Finished';
+            }
+            currentTime=time;
+        }
+
+        function runRR(queue, quantum) {
+            // preemptive round robin
+            const q = queue.map(p=>({...p})); // copy
+            let time = 0; const ready = [];
+            while (q.some(p=>p.remaining>0)) {
+                q.filter(p=>p.arrival<=time && p.remaining>0).forEach(p=>{ if(!ready.includes(p)) ready.push(p); });
+                if (ready.length===0) { time++; continue; }
+                const p = ready.shift(); if (p.startTime===null) { p.startTime=time; if(p.responseTime===null) p.responseTime=time-p.arrival; }
+                const exec = Math.min(quantum, p.remaining);
+                timeline.push({name:p.name, start:time, duration:exec});
+                time += exec; p.remaining -= exec;
+                // add newly arrived
+                q.filter(pp=>pp.arrival<=time && pp.remaining>0).forEach(pp=>{ if(!ready.includes(pp) && pp!==p && pp.remaining>0) ready.push(pp); });
+                if (p.remaining>0) ready.push(p); else { p.finishTime=time; p.waitingTime=(p.finishTime - p.arrival - p.burst); p.turnaround=p.finishTime - p.arrival; p.status='Finished'; }
+            }
+            // copy back results to original queue
+            queue.forEach(orig => {
+                const res = q.find(x=>x.name===orig.name);
+                if (res) { orig.startTime = res.startTime; orig.finishTime = res.finishTime; orig.waitingTime = res.waitingTime; orig.turnaround = res.turnaround; orig.responseTime = res.responseTime; orig.remaining = res.remaining; orig.status = res.status || (res.remaining>0? 'Ready':'Finished'); }
+            });
+            currentTime = time;
+        }
+
+        function runMLQ(queue) {
+            // simple two-level example: interactive (RR) and batch (FCFS)
+            const interactive = queue.filter(p=> (p.priority ?? 0) <= 2).map(p=>({...p}));
+            const batch = queue.filter(p=> (p.priority ?? 0) > 2).map(p=>({...p}));
+            // run interactive with small quantum
+            runRR(interactive, 2);
+            // then run FCFS on batch (append times)
+            const startOffset = currentTime;
+            batch.sort((a,b)=>a.arrival - b.arrival);
+            batch.forEach(p=>{
+                const st = Math.max(currentTime, p.arrival);
+                timeline.push({name:p.name, start:st, duration:p.burst});
+                currentTime = st + p.burst; p.startTime=st; p.finishTime=currentTime; p.waitingTime=p.startTime-p.arrival; p.turnaround=p.finishTime-p.arrival; p.status='Finished';
+            });
+        }
+
+        function computeStats(queue) {
+            const finished = queue.filter(p=>p.finishTime!=null);
+            if (finished.length===0) { updateStats(0,0,0); return; }
+            const avgTurn = (finished.reduce((s,p)=>s + (p.turnaround||0),0)/finished.length).toFixed(2);
+            const avgWait = (finished.reduce((s,p)=>s + (p.waitingTime||0),0)/finished.length).toFixed(2);
+            const avgResp = (finished.reduce((s,p)=>s + (p.responseTime||0),0)/finished.length).toFixed(2);
+            updateStats(avgTurn, avgWait, avgResp);
+        }
+
+        function updateStats(turn, wait, resp) {
+            document.getElementById('statTurnaround').textContent = turn;
+            document.getElementById('statWaiting').textContent = wait;
+            document.getElementById('statResponse').textContent = resp;
+        }
+
+        // utility
+        function scrollToSection(id) { document.getElementById(id).scrollIntoView({ behavior: 'smooth' }); }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => { refreshReadyQueue(); });
+    </script>
+</body>
+</html>

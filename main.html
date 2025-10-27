@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scheduling - زمانبندی در سیستم عامل</title>
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/animejs/lib/anime.iife.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap');
+        
+        * {
+            font-family: 'Vazirmatn', sans-serif;
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #c5671b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .memory-block {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .memory-block:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        
+        .algorithm-card {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .algorithm-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.2);
+        }
+        
+        .floating-animation {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .slide-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease;
+        }
+        
+        .slide-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .memory-visualization {
+            background: linear-gradient(45deg, #1e3c72 0%, #2a5298 100%);
+            border-radius: 20px;
+            padding: 20px;
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .memory-segment {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px;
+            text-align: center;
+            color: white;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .memory-segment:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+        
+        .process-flow {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .flow-step {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            flex: 1;
+            min-width: 150px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .flow-step::after {
+            content: '→';
+            position: absolute;
+            right: -30px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 24px;
+            color: #667eea;
+        }
+        
+        .flow-step:last-child::after {
+            display: none;
+        }
+        
+        .flow-step:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(102, 126, 234, 0.3);
+        }
+        
+        .comparison-table {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin: 30px 0;
+        }
+        
+        .comparison-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .comparison-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        
+        .comparison-table tr:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+        
+        .interactive-demo {
+            background: linear-gradient(135deg, #f093fb 0%, #e46e0e 100%);
+            border-radius: 20px;
+            padding: 30px;
+            color: white;
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        .demo-button {
+            background: white;
+            color: #f5576c;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+        
+        .demo-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        
+        .fragmentation-demo {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
+            gap: 5px;
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        
+        .memory-cell {
+            aspect-ratio: 1;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .occupied {
+            background: #e53e3e;
+            color: white;
+        }
+        
+        .free {
+            background: #48bb78;
+            color: white;
+        }
+        
+        .fragmented {
+            background: #ed8936;
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .process-flow {
+                flex-direction: column;
+            }
+            
+            .flow-step::after {
+                content: '↓';
+                right: 50%;
+                top: 100%;
+                transform: translateX(50%);
+            }
+            
+            .flow-step:last-child::after {
+                display: none;
+            }
+            
+            .comparison-table {
+                font-size: 14px;
+            }
+            
+            .comparison-table th,
+            .comparison-table td {
+                padding: 10px 5px;
+            }
+        }
+        
+        .dark-mode {
+            background: #1a202c;
+            color: #e2e8f0;
+        }
+        
+        .dark-mode .bg-white {
+            background: #2d3748;
+            color: #e2e8f0;
+        }
+        
+        .dark-mode .text-gray-800 {
+            color: #e2e8f0;
+        }
+        
+        .dark-mode .text-gray-600 {
+            color: #a0aec0;
+        }
+        
+        .dark-mode .border-gray-200 {
+            border-color: #4a5568;
+        }
+        
+        .dark-mode .comparison-table {
+            background: #2d3748;
+        }
+        
+        .dark-mode .comparison-table td {
+            border-bottom-color: #4a5568;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <i data-feather="clock" class="w-8 h-8 text-indigo-700"></i>
+                      <h1 class="text-2xl font-bold gradient-text">SchedulerOS</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="darkModeToggle" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition">
+                        <i data-feather="moon" class="w-5 h-5"></i>
+                    </button>
+                    <button id="menuToggle" class="md:hidden p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition">
+                        <i data-feather="menu" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="mobileMenu" class="hidden md:hidden mt-4">
+                <div class="flex flex-col space-y-2">
+                    <a href="#introduction" class="px-4 py-2 rounded-lg hover:bg-gray-100 transition">مقدمه</a>
+                    <a href="#address-space" class="px-4 py-2 rounded-lg hover:bg-gray-100 transition">فضای آدرس</a>
+                    <a href="#allocation" class="px-4 py-2 rounded-lg hover:bg-gray-100 transition">تخصیص حافظه</a>
+                    <a href="#algorithms" class="px-4 py-2 rounded-lg hover:bg-gray-100 transition">الگوریتم‌ها</a>
+                    <a href="#fragmentation" class="px-4 py-2 rounded-lg hover:bg-gray-100 transition">قطعه‌قطعه شدن</a>
+                    <a href="#paging" class="px-4 py-2 rounded-lg hover:bg-gray-100 transition">صفحه‌بندی</a>
+                    <a href="#segmentation" class="px-4 py-2 rounded-lg hover:bg-gray-100 transition">قطعه‌بندی</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative py-20 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 text-white overflow-hidden">
+        <div class="container mx-auto px-4 text-center relative z-10">
+            <h1 class="text-5xl md:text-7xl font-bold mb-6 floating-animation">
+                زمان بندی در سیستم عامل
+            </h1>
+                       <p class="text-xl md:text-2xl mb-8 max-w-3xl mx-auto">چگونگی تصمیم‌گیری سیستم‌عامل برای انتخاب فرآیندی که در هر لحظه باید روی CPU اجرا شود — هدف، الگوریتم‌ها و شبیه‌سازی تعاملی</p>
+
+            <div class="flex justify-center space-x-4">
+                <button onclick="scrollToSection('introduction')" class="bg-white text-indigo-600 px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition transform hover:scale-105">
+                    شروع یادگیری
+                </button>
+                <button onclick="scrollToSection('interactive-demo')" class="border-2 border-white text-white px-8 py-3 rounded-full font-semibold hover:bg-white hover:text-indigo-600 transition">
+                    دمو تعاملی
+                </button>
+            </div>
+        </div>
+        <div class="absolute inset-0 bg-black opacity-20"></div>
+    </section>
+
+    <!-- Introduction Section -->
+    <section id="introduction" class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-4xl font-bold text-center mb-12 gradient-text slide-in">تعریف مدیریت حافظه</h2>
+                
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-8 mb-12 slide-in">
+                    <p class="text-lg leading-relaxed text-gray-700 mb-6">
+                        مدیریت حافظه به مجموعه‌ای از روش‌ها و الگوریتم‌ها گفته می‌شود که سیستم‌عامل برای تخصیص (Allocation)، آزادسازی (Deallocation)، جابه‌جایی (Swapping) و کنترل حافظه اصلی (Main Memory) از آن‌ها استفاده می‌کند.
+                    </p>
+                    <div class="bg-white rounded-xl p-6 shadow-lg">
+                        <p class="text-xl font-semibold text-indigo-600 text-center">
+                            «سیستم‌عامل تصمیم بگیرد چه کسی، چه مقدار، از کدام بخش حافظه و تا چه زمانی استفاده کند.»
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Memory Visualization -->
+                <div class="memory-visualization slide-in">
+                    <h3 class="text-2xl font-bold text-center mb-6">نمایش کلی حافظه سیستم</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="memory-segment">
+                            <i data-feather="lock" class="w-8 h-8 mb-2 mx-auto"></i>
+                            <div class="font-semibold">Kernel Space</div>
+                            <div class="text-sm opacity-80">حافظه سیستم‌عامل</div>
+                        </div>
+                        <div class="memory-segment">
+                            <i data-feather="user" class="w-8 h-8 mb-2 mx-auto"></i>
+                            <div class="font-semibold">User Space</div>
+                            <div class="text-sm opacity-80">حافظه برنامه‌ها</div>
+                        </div>
+                        <div class="memory-segment">
+                            <i data-feather="hard-drive" class="w-8 h-8 mb-2 mx-auto"></i>
+                            <div class="font-semibold">Virtual Memory</div>
+                            <div class="text-sm opacity-80">حافظه مجازی</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Address Space Section -->
+    <section id="address-space" class="py-16 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-4xl font-bold text-center mb-12 gradient-text slide-in">فضای آدرس پردازش</h2>
+                
+                <div class="bg-white rounded-2xl p-8 shadow-lg mb-12 slide-in">
+                    <p class="text-lg leading-relaxed text-gray-700 mb-6">
+                        وقتی یک برنامه در سیستم‌عامل اجرا می‌شود، باید داده‌ها، متغیرها و دستورالعمل‌هایش در حافظه قرار بگیرند. اما نکته‌ی جالب اینجاست که هر برنامه فکر می‌کند تمام حافظه مخصوص خودش است!
+                    </p>
+                </div>
+
+                <!-- Address Types Flow -->
+                <div class="process-flow slide-in">
+                    <div class="flow-step">
+                        <i data-feather="code" class="w-8 h-8 mb-2 mx-auto"></i>
+                        <div class="font-semibold">آدرس نمادین</div>
+                        <div class="text-sm opacity-90">نام متغیرها و توابع</div>
+                    </div>
+                    <div class="flow-step">
+                        <i data-feather="file-text" class="w-8 h-8 mb-2 mx-auto"></i>
+                        <div class="font-semibold">آدرس نسبی</div>
+                        <div class="text-sm opacity-90">فاصله از ابتدای برنامه</div>
+                    </div>
+                    <div class="flow-step">
+                        <i data-feather="memory" class="w-8 h-8 mb-2 mx-auto"></i>
+                        <div class="font-semibold">آدرس فیزیکی</div>
+                        <div class="text-sm opacity-90">مکان واقعی در RAM</div>
+                    </div>
+                </div>
+
+                <!-- MMU Visualization -->
+                <div class="bg-gradient-to-r from-green-50 to-blue-50 rounded-2xl p-8 mt-12 slide-in">
+                    <h3 class="text-2xl font-bold text-center mb-6 text-green-700">واحد مدیریت حافظه (MMU)</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                        <div class="text-center">
+                            <div class="bg-white rounded-lg p-4 shadow-md">
+                                <i data-feather="cpu" class="w-12 h-12 text-blue-600 mx-auto mb-2"></i>
+                                <div class="font-semibold">پردازنده</div>
+                                <div class="text-sm text-gray-600">آدرس منطقی: 100</div>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <div class="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg p-6 shadow-lg">
+                                <i data-feather="arrow-right" class="w-12 h-12 text-white mx-auto mb-2"></i>
+                                <div class="font-semibold text-white">MMU</div>
+                                <div class="text-sm text-white">Base: 10000</div>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <div class="bg-white rounded-lg p-4 shadow-md">
+                                <i data-feather="memory" class="w-12 h-12 text-green-600 mx-auto mb-2"></i>
+                                <div class="font-semibold">حافظه</div>
+                                <div class="text-sm text-gray-600">آدرس فیزیکی: 10100</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Memory Allocation Section -->
+    <section id="allocation" class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-4xl font-bold text-center mb-12 gradient-text slide-in">تخصیص حافظه در سیستم‌عامل</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                    <div class="algorithm-card rounded-2xl p-6 slide-in">
+                        <div class="flex items-center mb-4">
+                            <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-xl ml-4">1</div>
+                            <h3 class="text-xl font-bold text-blue-700">تخصیص تک‌پارتیشنی</h3>
+                        </div>
+                        <p class="text-gray-700 leading-relaxed">
+                            در این روش، حافظه‌ی کاربر به عنوان یک ناحیه‌ی بزرگ در نظر گرفته می‌شود که در آن در هر لحظه تنها یک برنامه یا فرآیند اجرا می‌شود.
+                        </p>
+                        <div class="mt-4 p-3 bg-blue-50 rounded-lg">
+                            <p class="text-sm text-blue-600 font-semibold">✅ ساده - ❌ کارآمد نیست</p>
+                        </div>
+                    </div>
+                    
+                    <div class="algorithm-card rounded-2xl p-6 slide-in">
+                        <div class="flex items-center mb-4">
+                            <div class="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold text-xl ml-4">2</div>
+                            <h3 class="text-xl font-bold text-purple-700">تخصیص چندپارتیشنی</h3>
+                        </div>
+                        <p class="text-gray-700 leading-relaxed">
+                            حافظه به چند بخش (پارتیشن) تقسیم می‌شود و هر پارتیشن می‌تواند شامل یک فرآیند باشد.
+                        </p>
+                        <div class="mt-4 p-3 bg-purple-50 rounded-lg">
+                            <p class="text-sm text-purple-600 font-semibold">✅ کارآمد - ❌ ممکن است Fragmentation ایجاد شود</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Memory Structure Visualization -->
+                <div class="bg-gradient-to-r from-gray-100 to-gray-200 rounded-2xl p-8 slide-in">
+                    <h3 class="text-2xl font-bold text-center mb-6">ساختار حافظه‌ی اصلی</h3>
+                    <div class="space-y-4">
+                        <div class="bg-red-500 text-white rounded-lg p-4 text-center">
+                            <i data-feather="lock" class="w-6 h-6 inline-block ml-2"></i>
+                            <span class="font-semibold">حافظه‌ی سطح پایین (Low Memory) - مخصوص سیستم‌عامل و کرنل</span>
+                        </div>
+                        <div class="bg-green-500 text-white rounded-lg p-4 text-center">
+                            <i data-feather="user" class="w-6 h-6 inline-block ml-2"></i>
+                            <span class="font-semibold">حافظه‌ی سطح بالا (High Memory) - مخصوص فرآیندهای کاربر</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Allocation Algorithms Section -->
+    <section id="algorithms" class="py-16 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <div class="max-w-6xl mx-auto">
+                <h2 class="text-4xl font-bold text-center mb-12 gradient-text slide-in">الگوریتم‌های تخصیص حافظه</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                    <div class="algorithm-card rounded-2xl p-6 slide-in">
+                        <div class="flex items-center mb-4">
+                            <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white font-bold ml-3">🟢</div>
+                            <h3 class="text-lg font-bold text-green-700">First Fit</h3>
+                        </div>
+                        <p class="text-gray-700 text-sm leading-relaxed mb-3">
+                            اولین جای مناسب را انتخاب می‌کند. سریع است ولی ممکن است باعث تکه‌تکه شدن شود.
+                        </p>
+                        <div class="bg-green-50 rounded-lg p-3">
+                            <p class="text-xs text-green-600 font-semibold">سریع - ممکن است Fragmentation ایجاد کند</p>
+                        </div>
+                    </div>
+                    
+                    <div class="algorithm-card rounded-2xl p-6 slide-in">
+                        <div class="flex items-center mb-4">
+                            <div class="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold ml-3">🟣</div>
+                            <h3 class="text-lg font-bold text-purple-700">Next Fit</h3>
+                        </div>
+                        <p class="text-gray-700 text-sm leading-relaxed mb-3">
+                            از آخرین موقعیت تخصیص شروع می‌کند. توزیع یکنواخت‌تری ایجاد می‌کند.
+                        </p>
+                        <div class="bg-purple-50 rounded-lg p-3">
+                            <p class="text-xs text-purple-600 font-semibold">توزیع یکنواخت - بهتر از First Fit</p>
+                        </div>
+                    </div>
+                    
+                    <div class="algorithm-card rounded-2xl p-6 slide-in">
+                        <div class="flex items-center mb-4">
+                            <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold ml-3">🔵</div>
+                            <h3 class="text-lg font-bold text-blue-700">Best Fit</h3>
+                        </div>
+                        <p class="text-gray-700 text-sm leading-relaxed mb-3">
+                            کوچک‌ترین فضای ممکن را انتخاب می‌کند. استفاده بهینه از فضا.
+                        </p>
+                        <div class="bg-blue-50 rounded-lg p-3">
+                            <p class="text-xs text-blue-600 font-semibold">بهینه - کندتر از بقیه</p>
+                        </div>
+                    </div>
+                    
+                    <div class="algorithm-card rounded-2xl p-6 slide-in">
+                        <div class="flex items-center mb-4">
+                            <div class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold ml-3">🟠</div>
+                            <h3 class="text-lg font-bold text-orange-700">Worst Fit</h3>
+                        </div>
+                        <p class="text-gray-700 text-sm leading-relaxed mb-3">
+                            بزرگ‌ترین فضا را انتخاب می‌کند. فضای باقیمانده برای دیگران مفید است.
+                        </p>
+                        <div class="bg-orange-50 rounded-lg p-3">
+                            <p class="text-xs text-orange-600 font-semibold">فضای باقیمانده مفید - ممکن است هدر برود</p>
+                        </div>
+                    </div>
+                    
+                    <div class="algorithm-card rounded-2xl p-6 slide-in">
+                        <div class="flex items-center mb-4">
+                            <div class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white font-bold ml-3">🔴</div>
+                            <h3 class="text-lg font-bold text-red-700">Quick Fit</h3>
+                        </div>
+                        <p class="text-gray-700 text-sm leading-relaxed mb-3">
+                            لیست‌های از اندازه‌های پرکاربرد نگه می‌دارد. بسیار سریع است.
+                        </p>
+                        <div class="bg-red-50 rounded-lg p-3">
+                            <p class="text-xs text-red-600 font-semibold">سریع - نیازمند فضای اضافی</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Fragmentation Section -->
+    <section id="fragmentation" class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-4xl font-bold text-center mb-12 gradient-text slide-in">قطعه‌قطعه شدن (Fragmentation)</h2>
+                
+                <div class="bg-gradient-to-r from-red-50 to-orange-50 rounded-2xl p-8 mb-12 slide-in">
+                    <p class="text-lg leading-relaxed text-gray-700 mb-6">
+                        وقتی فرآیندها به طور مکرر وارد حافظه و از آن خارج می‌شوند، فضای حافظه به مرور زمان به تکه‌های کوچک و ناپیوسته تبدیل می‌شود.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                    <div class="bg-white border-2 border-red-200 rounded-2xl p-6 shadow-lg slide-in">
+                        <h3 class="text-xl font-bold text-red-700 mb-4 flex items-center">
+                            <i data-feather="alert-triangle" class="w-6 h-6 ml-2"></i>
+                            قطعه‌قطعه شدن خارجی
+                        </h3>
+                        <p class="text-gray-700 leading-relaxed mb-4">
+                            کل حافظه‌ی خالی موجود به اندازه‌ی کافی زیاد است، اما فضای آزاد در حافظه به شکل پیوسته وجود ندارد.
+                        </p>
+                        <div class="fragmentation-demo">
+                            <div class="memory-cell occupied">P1</div>
+                            <div class="memory-cell free">F</div>
+                            <div class="memory-cell occupied">P2</div>
+                            <div class="memory-cell free">F</div>
+                            <div class="memory-cell occupied">P3</div>
+                            <div class="memory-cell fragmented">?</div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white border-2 border-orange-200 rounded-2xl p-6 shadow-lg slide-in">
+                        <h3 class="text-xl font-bold text-orange-700 mb-4 flex items-center">
+                            <i data-feather="minus-square" class="w-6 h-6 ml-2"></i>
+                            قطعه‌قطعه شدن داخلی
+                        </h3>
+                        <p class="text-gray-700 leading-relaxed mb-4">
+                            به یک فرآیند بلوکی از حافظه داده می‌شود که بزرگ‌تر از نیاز واقعی آن است.
+                        </p>
+                        <div class="fragmentation-demo">
+                            <div class="memory-cell occupied">P</div>
+                            <div class="memory-cell occupied">P</div>
+                            <div class="memory-cell occupied">P</div>
+                            <div class="memory-cell fragmented">W</div>
+                            <div class="memory-cell fragmented">W</div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">W = Waste (هدررفت)</p>
+                    </div>
+                </div>
+
+                <!-- Compaction Solution -->
+                <div class="bg-gradient-to-r from-green-50 to-blue-50 rounded-2xl p-8 slide-in">
+                    <h3 class="text-2xl font-bold text-center mb-6 text-green-700">راه‌حل: فشرده‌سازی (Compaction)</h3>
+                    <p class="text-center text-gray-700 mb-6">
+                        حافظه‌های تخصیص‌یافته جابجا می‌شوند تا فضاهای خالی در کنار هم قرار گرفته و به صورت پیوسته در دسترس باشند.
+                    </p>
+                    <div class="flex justify-center">
+                        <button class="demo-button" onclick="showCompactionDemo()">
+                            مشاهده دمو فشرده‌سازی
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Paging Section -->
+    <section id="paging" class="py-16 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-4xl font-bold text-center mb-12 gradient-text slide-in">صفحه‌بندی (Paging)</h2>
+                
+                <div class="bg-white rounded-2xl p-8 shadow-lg mb-12 slide-in">
+                    <p class="text-lg leading-relaxed text-gray-700 mb-6">
+                        صفحه‌بندی یکی از مهم‌ترین تکنیک‌های مدیریت حافظه است که برای حل مشکل قطعه‌قطعه شدن خارجی و استفاده از حافظه‌ی مجازی به کار می‌رود.
+                    </p>
+                </div>
+
+                <!-- Paging Visualization -->
+                <div class="bg-gradient-to-r from-blue-100 to-purple-100 rounded-2xl p-8 mb-12 slide-in">
+                    <h3 class="text-2xl font-bold text-center mb-6 text-blue-700">نحوه کار صفحه‌بندی</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <h4 class="text-lg font-semibold mb-4 text-center">حافظه منطقی (Pages)</h4>
+                            <div class="grid grid-cols-4 gap-2">
+                                <div class="bg-blue-500 text-white rounded p-3 text-center text-sm font-semibold">Page 0</div>
+                                <div class="bg-blue-500 text-white rounded p-3 text-center text-sm font-semibold">Page 1</div>
+                                <div class="bg-blue-500 text-white rounded p-3 text-center text-sm font-semibold">Page 2</div>
+                                <div class="bg-blue-500 text-white rounded p-3 text-center text-sm font-semibold">Page 3</div>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold mb-4 text-center">حافظه فیزیکی (Frames)</h4>
+                            <div class="grid grid-cols-4 gap-2">
+                                <div class="bg-green-500 text-white rounded p-3 text-center text-sm font-semibold">Frame 0</div>
+                                <div class="bg-green-500 text-white rounded p-3 text-center text-sm font-semibold">Frame 1</div>
+                                <div class="bg-green-500 text-white rounded p-3 text-center text-sm font-semibold">Frame 2</div>
+                                <div class="bg-green-500 text-white rounded p-3 text-center text-sm font-semibold">Frame 3</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-6 text-center">
+                        <i data-feather="arrow-down" class="w-8 h-8 text-gray-600 mx-auto"></i>
+                        <p class="text-sm text-gray-600 mt-2">نگاشت از طریق Page Table</p>
+                    </div>
+                </div>
+
+                <!-- Address Translation -->
+                <div class="bg-white border-2 border-indigo-200 rounded-2xl p-8 slide-in">
+                    <h3 class="text-xl font-bold text-indigo-700 mb-4">ترجمه‌ی آدرس</h3>
+                    <div class="bg-indigo-50 rounded-lg p-4 mb-4">
+                        <p class="text-sm text-indigo-600 font-mono">
+                            Logical Address = Page Number + Page Offset<br>
+                            Physical Address = Frame Number + Page Offset
+                        </p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                        <div class="bg-gray-100 rounded-lg p-4">
+                            <div class="font-semibold">Page Number</div>
+                            <div class="text-sm text-gray-600">شماره صفحه</div>
+                        </div>
+                        <div class="bg-gray-100 rounded-lg p-4">
+                            <div class="font-semibold">Page Table</div>
+                            <div class="text-sm text-gray-600">جدول نگاشت</div>
+                        </div>
+                        <div class="bg-gray-100 rounded-lg p-4">
+                            <div class="font-semibold">Frame Number</div>
+                            <div class="text-sm text-gray-600">شماره فریم</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Segmentation Section -->
+    <section id="segmentation" class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="max-w-6xl mx-auto">
+                <h2 class="text-4xl font-bold text-center mb-12 gradient-text slide-in">قطعه‌بندی (Segmentation)</h2>
+                
+                <div class="bg-white rounded-2xl p-8 shadow-lg mb-12 slide-in">
+                    <p class="text-lg leading-relaxed text-gray-700 mb-6">
+                        قطعه‌بندی تکنیکی دیگر در مدیریت حافظه است که با هدف طبیعی‌تر کردن سازماندهی حافظه و بهبود انعطاف‌پذیری طراحی شده است.
+                    </p>
+                </div>
+
+                <!-- Segments Visualization -->
+                <div class="bg-gradient-to-r from-teal-50 to-cyan-50 rounded-2xl p-8 mb-12 slide-in">
+                    <h3 class="text-2xl font-bold text-center mb-6 text-teal-700">انواع سگمنت‌ها</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="bg-teal-500 text-white rounded-lg p-4 text-center">
+                            <i data-feather="code" class="w-8 h-8 mb-2 mx-auto"></i>
+                            <div class="font-semibold">Code Segment</div>
+                            <div class="text-xs opacity-90">کد برنامه</div>
+                        </div>
+                        <div class="bg-cyan-500 text-white rounded-lg p-4 text-center">
+                            <i data-feather="database" class="w-8 h-8 mb-2 mx-auto"></i>
+                            <div class="font-semibold">Data Segment</div>
+                            <div class="text-xs opacity-90">داده‌ها</div>
+                        </div>
+                        <div class="bg-blue-500 text-white rounded-lg p-4 text-center">
+                            <i data-feather="layers" class="w-8 h-8 mb-2 mx-auto"></i>
+                            <div class="font-semibold">Stack Segment</div>
+                            <div class="text-xs opacity-90">پشته</div>
+                        </div>
+                        <div class="bg-indigo-500 text-white rounded-lg p-4 text-center">
+                            <i data-feather="box" class="w-8 h-8 mb-2 mx-auto"></i>
+                            <div class="font-semibold">Heap Segment</div>
+                            <div class="text-xs opacity-90"> heap حافظه</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Paging vs Segmentation Comparison -->
+                <div class="comparison-table slide-in">
+                    <table class="w-full">
+                        <thead>
+                            <tr>
+                                <th>ویژگی</th>
+                                <th>Paging</th>
+                                <th>Segmentation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="font-semibold">اندازه‌ی بلوک‌ها</td>
+                                <td>ثابت (Page)</td>
+                                <td>متغیر (Segment)</td>
+                            </tr>
+                            <tr>
+                                <td class="font-semibold">هدف اصلی</td>
+                                <td>حذف External Fragmentation</td>
+                                <td>تفکیک منطقی برنامه</td>
+                            </tr>
+                            <tr>
+                                <td class="font-semibold">نوع آدرس</td>
+                                <td>Page Number + Offset</td>
+                                <td>Segment Number + Offset</td>
+                            </tr>
+                            <tr>
+                                <td class="font-semibold">جدول نگاشت</td>
+                                <td>Page Table</td>
+                                <td>Segment Table</td>
+                            </tr>
+                            <tr>
+                                <td class="font-semibold">نوع Fragmentation</td>
+                                <td>داخلی</td>
+                                <td>خارجی</td>
+                            </tr>
+                            <tr>
+                                <td class="font-semibold">کاربرد معمول</td>
+                                <td>حافظه‌ی مجازی</td>
+                                <td>ساختار منطقی برنامه‌ها</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive Demo Section -->
+    <section id="interactive-demo" class="py-16 bg-gradient-to-br from-purple-600 via-pink-600 to-red-600 text-white">
+        <div class="container mx-auto px-4">
+            <div class="max-w-4xl mx-auto text-center">
+                <h2 class="text-4xl font-bold mb-8 slide-in">دمو تعاملی</h2>
+                
+                <div class="interactive-demo slide-in">
+                    <h3 class="text-2xl font-bold mb-6">شبیه‌سازی مدیریت حافظه</h3>
+                    <p class="mb-8">با استفاده از دکمه‌های زیر، می‌توانید فرآیندهای مختلف را ایجاد کرده و ببینید سیستم‌عامل چگونه حافظه را مدیریت می‌کند.</p>
+                    
+                    <div class="flex flex-wrap justify-center gap-4 mb-8">
+                        <button class="demo-button" onclick="createProcess()">ایجاد فرآیند جدید</button>
+                        <button class="demo-button" onclick="terminateProcess()">پایان فرآیند</button>
+                        <button class="demo-button" onclick="showFragmentation()">نمایش Fragmentation</button>
+                        <button class="demo-button" onclick="runCompaction()">اجرای Compaction</button>
+                    </div>
+                    
+                    <div id="memoryDemo" class="fragmentation-demo max-w-2xl mx-auto">
+                        <!-- Memory cells will be generated here -->
+                    </div>
+                    
+                    <div id="demoStats" class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white bg-opacity-20 rounded-lg p-4">
+                            <div class="text-2xl font-bold" id="totalMemory">64</div>
+                            <div class="text-sm">کل حافظه</div>
+                        </div>
+                        <div class="bg-white bg-opacity-20 rounded-lg p-4">
+                            <div class="text-2xl font-bold" id="usedMemory">0</div>
+                            <div class="text-sm">حافظه استفاده شده</div>
+                        </div>
+                        <div class="bg-white bg-opacity-20 rounded-lg p-4">
+                            <div class="text-2xl font-bold" id="freeMemory">64</div>
+                            <div class="text-sm">حافظه آزاد</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="max-w-4xl mx-auto text-center">
+                <div class="flex items-center justify-center mb-6">
+                    <i data-feather="cpu" class="w-8 h-8 text-indigo-400 ml-3"></i>
+                    <h3 class="text-2xl font-bold gradient-text">MemoryOS</h3>
+                </div>
+                <p class="text-gray-400 mb-6">
+                    سازنده : میلاد باصری
+                </p>
+                <div class="flex justify-center space-x-6">
+                    <a href="#" class="text-gray-400 hover:text-white transition">
+                        <i data-feather="github" class="w-6 h-6"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition">
+                        <i data-feather="twitter" class="w-6 h-6"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition">
+                        <i data-feather="linkedin" class="w-6 h-6"></i>
+                    </a>
+                </div>
+                <div class="mt-8 pt-8 border-t border-gray-800">
+                    <p class="text-gray-500 text-sm">
+                        ساخته شده با ❤️ برای جامعه دانشجویان دانشگاه اسلامشهر کامپیوتر
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Feather Icons
+        feather.replace();
+
+        // Dark Mode Toggle
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const body = document.body;
+        
+        darkModeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            const icon = darkModeToggle.querySelector('i');
+            if (body.classList.contains('dark-mode')) {
+                icon.setAttribute('data-feather', 'sun');
+            } else {
+                icon.setAttribute('data-feather', 'moon');
+            }
+            feather.replace();
+        });
+
+        // Mobile Menu Toggle
+        const menuToggle = document.getElementById('menuToggle');
+        const mobileMenu = document.getElementById('mobileMenu');
+        
+        menuToggle.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Smooth Scrolling
+        function scrollToSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            section.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Slide-in Animation on Scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.slide-in').forEach(el => {
+            observer.observe(el);
+        });
+
+        // Interactive Demo Functions
+        let memoryCells = [];
+        let processCounter = 0;
+
+        function initializeMemoryDemo() {
+            const demo = document.getElementById('memoryDemo');
+            demo.innerHTML = '';
+            memoryCells = [];
+            
+            for (let i = 0; i < 64; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'memory-cell free';
+                cell.textContent = 'F';
+                cell.id = `cell-${i}`;
+                demo.appendChild(cell);
+                memoryCells.push({ occupied: false, process: null });
+            }
+            
+            updateStats();
+        }
+
+        function createProcess() {
+            const size = Math.floor(Math.random() * 8) + 2;
+            const startIndex = findFreeSpace(size);
+            
+            if (startIndex !== -1) {
+                processCounter++;
+                for (let i = startIndex; i < startIndex + size; i++) {
+                    const cell = document.getElementById(`cell-${i}`);
+                    cell.className = 'memory-cell occupied';
+                    cell.textContent = `P${processCounter}`;
+                    memoryCells[i] = { occupied: true, process: processCounter };
+                }
+                updateStats();
+            } else {
+                alert('فضای کافی برای ایجاد فرآیند جدید وجود ندارد!');
+            }
+        }
+
+        function findFreeSpace(size) {
+            for (let i = 0; i <= memoryCells.length - size; i++) {
+                let free = true;
+                for (let j = i; j < i + size; j++) {
+                    if (memoryCells[j].occupied) {
+                        free = false;
+                        break;
+                    }
+                }
+                if (free) return i;
+            }
+            return -1;
+        }
+
+        function terminateProcess() {
+            const occupiedCells = memoryCells.filter(cell => cell.occupied);
+            if (occupiedCells.length === 0) {
+                alert('هیچ فرآیندی برای پایان دادن وجود ندارد!');
+                return;
+            }
+            
+            const randomProcess = occupiedCells[Math.floor(Math.random() * occupiedCells.length)].process;
+            
+            memoryCells.forEach((cell, index) => {
+                if (cell.process === randomProcess) {
+                    const cellElement = document.getElementById(`cell-${index}`);
+                    cellElement.className = 'memory-cell free';
+                    cellElement.textContent = 'F';
+                    memoryCells[index] = { occupied: false, process: null };
+                }
+            });
+            
+            updateStats();
+        }
+
+        function showFragmentation() {
+            // Create external fragmentation pattern
+            const pattern = [true, false, true, false, true, false, true, false];
+            let patternIndex = 0;
+            
+            memoryCells.forEach((cell, index) => {
+                const cellElement = document.getElementById(`cell-${index}`);
+                if (pattern[patternIndex % pattern.length]) {
+                    cellElement.className = 'memory-cell occupied';
+                    cellElement.textContent = 'P';
+                    memoryCells[index] = { occupied: true, process: 1 };
+                } else {
+                    cellElement.className = 'memory-cell free';
+                    cellElement.textContent = 'F';
+                    memoryCells[index] = { occupied: false, process: null };
+                }
+                patternIndex++;
+            });
+            
+            updateStats();
+            alert('الگوی Fragmentation خارجی ایجاد شد!');
+        }
+
+        function runCompaction() {
+            // Simple compaction simulation
+            const occupiedCells = memoryCells.filter(cell => cell.occupied);
+            const freeCells = memoryCells.filter(cell => !cell.occupied);
+            
+            // Move all occupied cells to the beginning
+            occupiedCells.forEach((cell, index) => {
+                const cellElement = document.getElementById(`cell-${index}`);
+                cellElement.className = 'memory-cell occupied';
+                cellElement.textContent = `P${cell.process}`;
+                memoryCells[index] = { occupied: true, process: cell.process };
+            });
+            
+            // Mark remaining cells as free
+            for (let i = occupiedCells.length; i < memoryCells.length; i++) {
+                const cellElement = document.getElementById(`cell-${i}`);
+                cellElement.className = 'memory-cell free';
+                cellElement.textContent = 'F';
+                memoryCells[i] = { occupied: false, process: null };
+            }
+            
+            updateStats();
+            alert('Compaction انجام شد! حافظه بهینه سازی گردید.');
+        }
+
+        function updateStats() {
+            const total = memoryCells.length;
+            const used = memoryCells.filter(cell => cell.occupied).length;
+            const free = total - used;
+            
+            document.getElementById('totalMemory').textContent = total;
+            document.getElementById('usedMemory').textContent = used;
+            document.getElementById('freeMemory').textContent = free;
+        }
+
+        function showCompactionDemo() {
+            alert('برای مشاهده دمو فشرده‌سازی، به بخش دمو تعاملی بروید و دکمه "اجرای Compaction" را فشار دهید.');
+        }
+
+        // Initialize demo on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeMemoryDemo();
+        });
+
+        // Add some entrance animations
+        anime({
+            targets: '.floating-animation',
+            translateY: [-20, 0],
+            opacity: [0, 1],
+            duration: 1000,
+            easing: 'easeOutExpo'
+        });
+
+        anime({
+            targets: 'nav',
+            translateY: [-50, 0],
+            opacity: [0, 1],
+            duration: 800,
+            easing: 'easeOutExpo'
+        });
+    </script>
+</body>
+</html>
